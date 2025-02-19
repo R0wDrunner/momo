@@ -1,9 +1,10 @@
 import streamlit as st
 import httpx
-import json
-from datetime import datetime
-from typing import List, Dict, Any
 import asyncio
+import json
+from typing import List, Dict, Any, AsyncGenerator
+import time
+from datetime import datetime
 
 class MonicaChat:
     def __init__(self):
@@ -12,146 +13,120 @@ class MonicaChat:
             "Content-Type": "application/json",
             "X-Api-Key": st.secrets["MONICA_API_KEY"],
             "X-Client-Id": st.secrets["MONICA_CLIENT_ID"],
-            "X-Client-Type": "streamlit",
+            "X-Client-Type": "vscodeVisual Studio Code",
+            "X-Client-Version": "1.3.14",
+            "X-Product-Name": "monica-code",
             "X-Time-Zone": "UTC;0"
         }
-    
-    async def send_message(self, messages: List[Dict[str, str]]) -> Dict[str, Any]:
-        # Format messages properly
-        formatted_messages = [
-            {
+
+    async def _process_stream(self, response: httpx.Response) -> AsyncGenerator[str, None]:
+        async for line in response.aiter_lines():
+            if line.startswith('data: '):
+                data = line[6:]  # Remove 'data: ' prefix
+                if data.strip() == '[DONE]':
+                    break
+                try:
+                    json_data = json.loads(data)
+                    if 'choices' in json_data and len(json_data['choices']) > 0:
+                        delta = json_data['choices'][0].get('delta', {})
+                        if 'content' in delta:
+                            yield delta['content']
+                except json.JSONDecodeError:
+                    continue
+
+    async def send_message(self, messages: List[Dict[str, str]], placeholder) -> None:
+        formatted_messages = []
+        for msg in messages:
+            formatted_messages.append({
                 "role": msg["role"],
-                "content": msg["content"]
-            } for msg in messages
-        ]
+                "content": [{
+                    "type": "text",
+                    "text": msg["content"]
+                }]
+            })
         
         payload = {
             "messages": formatted_messages,
-            "model": "claude-3-sonnet-20240229",
-            "max_tokens": 4096,
-            "temperature": 0.7,
-            "stream": False
+            "model": "claude-3-5-sonnet-20241022",
+            "max_tokens": 8192,
+            "temperature": 0.5,
+            "stream": True,
+            "tools": [
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "builtin_read_file",
+                        "description": "Use this tool whenever you need to view the contents of a file.",
+                        "parameters": {
+                            "type": "object",
+                            "required": ["filepath"],
+                            "properties": {
+                                "filepath": {
+                                    "type": "string",
+                                    "description": "The path of the file to read, relative to the root of the workspace."
+                                }
+                            }
+                        }
+                    }
+                },
+                # Add other tools as needed
+            ]
         }
-        
+
+        full_response = ""
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
-                # Debug request
-                st.write("Full request URL:", self.api_url)
-                st.write("Full payload:", json.dumps(payload, indent=2))
-                
-                response = await client.post(
-                    self.api_url,
-                    json=payload,
-                    headers=self.headers
-                )
-                
-                st.write("Response status:", response.status_code)
-                st.write("Response headers:", dict(response.headers))
-                st.write("Raw response text:", response.text)
-                
-                if not response.text:
-                    return {
-                        "error": "Empty response from API",
-                        "choices": [{
-                            "message": {
-                                "content": "I apologize, but I received an empty response from the API. Please try again."
-                            }
-                        }]
-                    }
-                
-                try:
-                    return response.json()
-                except json.JSONDecodeError:
-                    return {
-                        "error": "Invalid JSON response",
-                        "choices": [{
-                            "message": {
-                                "content": "I apologize, but I received an invalid response. Please try again."
-                            }
-                        }]
-                    }
-                
+                async with client.stream('POST', self.api_url, json=payload, headers=self.headers) as response:
+                    async for chunk in self._process_stream(response):
+                        full_response += chunk
+                        placeholder.markdown(full_response + "▌")
+                    
+                    # Final update without the cursor
+                    placeholder.markdown(full_response)
+                    
         except Exception as e:
-            st.error(f"Error: {str(e)}")
-            return {
-                "error": str(e),
-                "choices": [{
-                    "message": {
-                        "content": f"An error occurred: {str(e)}"
-                    }
-                }]
-            }
+            placeholder.error(f"Error: {str(e)}")
+            return
+
+        return full_response
+
+def init_session_state():
+    if 'messages' not in st.session_state:
+        st.session_state.messages = []
+    if 'chat_interface' not in st.session_state:
+        st.session_state.chat_interface = MonicaChat()
 
 def main():
-    st.title("💬 Monica AI Chat")
-    
-    # Initialize session state if needed
-    if "conversations" not in st.session_state:
-        st.session_state.conversations = {}
-    if "current_conversation_id" not in st.session_state:
-        st.session_state.current_conversation_id = None
-    
-    # Sidebar for conversation management
-    with st.sidebar:
-        st.title("📚 Conversations")
-        
-        # New chat button
-        if st.button("➕ New Chat"):
-            new_id = f"chat_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-            st.session_state.conversations[new_id] = []
-            st.session_state.current_conversation_id = new_id
-            st.rerun()
-        
-        st.divider()
-        
-        # List existing conversations
-        for conv_id in st.session_state.conversations:
-            title = "New Chat" if not st.session_state.conversations[conv_id] else \
-                   st.session_state.conversations[conv_id][0]['content'][:30] + "..."
+    st.title("Monica Chat Interface")
+    init_session_state()
+
+    # Display chat messages
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
+    # Chat input
+    if prompt := st.chat_input("What would you like to know?"):
+        # Add user message to chat history
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
+
+        # Add assistant message placeholder
+        with st.chat_message("assistant"):
+            response_placeholder = st.empty()
             
-            if st.button(f"💭 {title}", key=conv_id):
-                st.session_state.current_conversation_id = conv_id
-                st.rerun()
-    
-    # Main chat interface
-    if st.session_state.current_conversation_id:
-        chat_interface = MonicaChat()
-        
-        # Display chat history
-        for message in st.session_state.conversations[st.session_state.current_conversation_id]:
-            with st.chat_message(message["role"]):
-                st.markdown(message["content"])
-        
-        # Chat input
-        if prompt := st.chat_input("Type your message here..."):
-            # Add user message
-            with st.chat_message("user"):
-                st.markdown(prompt)
+            # Get assistant response
+            asyncio.run(st.session_state.chat_interface.send_message(
+                st.session_state.messages,
+                response_placeholder
+            ))
             
-            user_message = {"role": "user", "content": prompt}
-            st.session_state.conversations[st.session_state.current_conversation_id].append(user_message)
+            # Get the final response from the placeholder
+            final_response = response_placeholder.markdown()
             
-            # Get response from API
-            with st.spinner("Thinking..."):
-                response = asyncio.run(chat_interface.send_message(
-                    st.session_state.conversations[st.session_state.current_conversation_id]
-                ))
-            
-            # Handle API response
-            if "error" not in response:
-                assistant_message = {
-                    "role": "assistant",
-                    "content": response.get("choices", [{}])[0].get("message", {}).get("content", "Sorry, I couldn't process that.")
-                }
-                st.session_state.conversations[st.session_state.current_conversation_id].append(assistant_message)
-                
-                with st.chat_message("assistant"):
-                    st.markdown(assistant_message["content"])
-            else:
-                with st.chat_message("assistant"):
-                    st.error(f"Error: {response.get('error', 'Unknown error')}")
-    else:
-        st.info("👈 Create a new chat or select an existing one from the sidebar")
+            # Add assistant response to chat history
+            st.session_state.messages.append({"role": "assistant", "content": final_response})
 
 if __name__ == "__main__":
     main()
