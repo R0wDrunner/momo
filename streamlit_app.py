@@ -214,7 +214,7 @@ def main():
         if st.button("New Chat", key="new_chat"):
             st.session_state.messages = []
             st.session_state.current_chat = len(st.session_state.chat_history)
-            st.experimental_rerun()
+            st.rerun()
 
         # Display chat history
         for i, chat in enumerate(st.session_state.chat_history):
@@ -222,7 +222,7 @@ def main():
             if st.button(f"💬 {chat_title}", key=f"chat_{i}"):
                 st.session_state.messages = chat.copy()
                 st.session_state.current_chat = i
-                st.experimental_rerun()
+                st.rerun()
 
     # Main chat interface
     st.title("LIMIT●LESS")
