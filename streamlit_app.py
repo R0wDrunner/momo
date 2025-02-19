@@ -5,14 +5,6 @@ from datetime import datetime
 from typing import List, Dict, Any
 import asyncio
 
-# Initialize session state
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-if "conversations" not in st.session_state:
-    st.session_state.conversations = {}
-if "current_conversation_id" not in st.session_state:
-    st.session_state.current_conversation_id = None
-
 class MonicaChat:
     def __init__(self):
         self.api_url = "https://monica.im/api/coder/llm_proxy/chat/completions"
@@ -25,19 +17,27 @@ class MonicaChat:
         }
     
     async def send_message(self, messages: List[Dict[str, str]]) -> Dict[str, Any]:
+        # Format messages properly
+        formatted_messages = [
+            {
+                "role": msg["role"],
+                "content": msg["content"]
+            } for msg in messages
+        ]
+        
         payload = {
-            "messages": messages,
-            "model": "claude-3-sonnet-20240229",  # Updated model name
+            "messages": formatted_messages,
+            "model": "claude-3-sonnet-20240229",
             "max_tokens": 4096,
             "temperature": 0.7,
             "stream": False
         }
         
         try:
-            async with httpx.AsyncClient(timeout=30.0) as client:  # Added timeout
-                # Debug prints
-                st.write("Sending request with payload:", payload)
-                st.write("Headers:", {k: v for k, v in self.headers.items() if k != 'X-Api-Key'})
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                # Debug request
+                st.write("Full request URL:", self.api_url)
+                st.write("Full payload:", json.dumps(payload, indent=2))
                 
                 response = await client.post(
                     self.api_url,
@@ -45,34 +45,51 @@ class MonicaChat:
                     headers=self.headers
                 )
                 
-                # Debug response
                 st.write("Response status:", response.status_code)
+                st.write("Response headers:", dict(response.headers))
+                st.write("Raw response text:", response.text)
+                
+                if not response.text:
+                    return {
+                        "error": "Empty response from API",
+                        "choices": [{
+                            "message": {
+                                "content": "I apologize, but I received an empty response from the API. Please try again."
+                            }
+                        }]
+                    }
                 
                 try:
-                    response_data = response.json()
-                    st.write("Response data:", response_data)
-                    return response_data
+                    return response.json()
                 except json.JSONDecodeError:
-                    st.error(f"Invalid JSON response. Raw response: {response.text}")
-                    return {"error": "Invalid JSON response from API"}
+                    return {
+                        "error": "Invalid JSON response",
+                        "choices": [{
+                            "message": {
+                                "content": "I apologize, but I received an invalid response. Please try again."
+                            }
+                        }]
+                    }
                 
-        except httpx.TimeoutException:
-            st.error("Request timed out")
-            return {"error": "Request timed out"}
         except Exception as e:
             st.error(f"Error: {str(e)}")
-            return {"error": str(e)}
-
-def initialize_session():
-    """Initialize or reset session state"""
-    if 'user_id' not in st.session_state:
-        st.session_state.user_id = datetime.now().strftime("%Y%m%d%H%M%S")
-    if 'chat_history' not in st.session_state:
-        st.session_state.chat_history = {}
+            return {
+                "error": str(e),
+                "choices": [{
+                    "message": {
+                        "content": f"An error occurred: {str(e)}"
+                    }
+                }]
+            }
 
 def main():
     st.title("💬 Monica AI Chat")
-    initialize_session()
+    
+    # Initialize session state if needed
+    if "conversations" not in st.session_state:
+        st.session_state.conversations = {}
+    if "current_conversation_id" not in st.session_state:
+        st.session_state.current_conversation_id = None
     
     # Sidebar for conversation management
     with st.sidebar:
@@ -83,19 +100,18 @@ def main():
             new_id = f"chat_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
             st.session_state.conversations[new_id] = []
             st.session_state.current_conversation_id = new_id
-            st.rerun()  # Updated from experimental_rerun
+            st.rerun()
         
         st.divider()
         
         # List existing conversations
         for conv_id in st.session_state.conversations:
-            # Get first message or use default title
             title = "New Chat" if not st.session_state.conversations[conv_id] else \
                    st.session_state.conversations[conv_id][0]['content'][:30] + "..."
             
             if st.button(f"💭 {title}", key=conv_id):
                 st.session_state.current_conversation_id = conv_id
-                st.rerun()  # Updated from experimental_rerun
+                st.rerun()
     
     # Main chat interface
     if st.session_state.current_conversation_id:
@@ -122,7 +138,7 @@ def main():
                 ))
             
             # Handle API response
-            if response and "error" not in response:
+            if "error" not in response:
                 assistant_message = {
                     "role": "assistant",
                     "content": response.get("choices", [{}])[0].get("message", {}).get("content", "Sorry, I couldn't process that.")
@@ -131,6 +147,9 @@ def main():
                 
                 with st.chat_message("assistant"):
                     st.markdown(assistant_message["content"])
+            else:
+                with st.chat_message("assistant"):
+                    st.error(f"Error: {response.get('error', 'Unknown error')}")
     else:
         st.info("👈 Create a new chat or select an existing one from the sidebar")
 
