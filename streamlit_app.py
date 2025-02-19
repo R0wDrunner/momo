@@ -65,7 +65,7 @@ def main():
             new_id = f"chat_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
             st.session_state.conversations[new_id] = []
             st.session_state.current_conversation_id = new_id
-            st.experimental_rerun()
+            st.rerun()  # Updated from experimental_rerun
         
         st.divider()
         
@@ -77,7 +77,7 @@ def main():
             
             if st.button(f"💭 {title}", key=conv_id):
                 st.session_state.current_conversation_id = conv_id
-                st.experimental_rerun()
+                st.rerun()  # Updated from experimental_rerun
     
     # Main chat interface
     if st.session_state.current_conversation_id:
