@@ -68,7 +68,6 @@ st.markdown("""
     .stChatInput:focus {
         border-color: #4a4b50 !important;
         box-shadow: 0 0 0 1px #4a4b50 !important;
-        border-radius: 8px !important;
     }
 
     /* Chat input field wrapper */
@@ -76,12 +75,17 @@ st.markdown("""
         border-radius: 8px !important;
     }
 
-    .stChatInputContainer > div > div {
+    /* Fix for red border radius */
+    .stChatInput > div > div {
         border-radius: 8px !important;
     }
 
-    /* This ensures the red border has the same radius */
     .stChatInput > div {
+        border-radius: 8px !important;
+    }
+
+    /* Additional fix for red border */
+    .stChatInput div[data-baseweb="input"] {
         border-radius: 8px !important;
     }
 
@@ -265,6 +269,11 @@ def main():
         # Add user message to chat history
         st.session_state.messages.append({"role": "user", "content": prompt})
 
+        # Add to chat history immediately after first message
+        if len(st.session_state.messages) == 1:
+            st.session_state.chat_history.append(st.session_state.messages.copy())
+            st.session_state.current_chat = len(st.session_state.chat_history) - 1
+
         with st.chat_message("user"):
             st.markdown(prompt)
 
@@ -281,11 +290,9 @@ def main():
             # Add assistant response to chat history
             st.session_state.messages.append({"role": "assistant", "content": response})
 
-            # Update chat history
+            # Update existing chat in history
             if st.session_state.current_chat < len(st.session_state.chat_history):
                 st.session_state.chat_history[st.session_state.current_chat] = st.session_state.messages.copy()
-            else:
-                st.session_state.chat_history.append(st.session_state.messages.copy())
 
 if __name__ == "__main__":
     main()
