@@ -1,8 +1,8 @@
 import streamlit as st
-import requests
+import httpx
 from datetime import datetime
-import os
-import json
+from typing import List, Dict, Any
+import asyncio
 
 # Initialize session state
 if "messages" not in st.session_state:
@@ -12,27 +12,38 @@ if "conversations" not in st.session_state:
 if "current_conversation_id" not in st.session_state:
     st.session_state.current_conversation_id = None
 
-class ChatInterface:
+class MonicaChat:
     def __init__(self):
-        # Get API URL from Streamlit secrets or environment
-        self.api_url = st.secrets.get("API_URL", "http://localhost:8000/chat")
+        self.api_url = "https://monica.im/api/coder/llm_proxy/chat/completions"
+        self.headers = {
+            "Content-Type": "application/json",
+            "X-Api-Key": st.secrets["MONICA_API_KEY"],
+            "X-Client-Id": st.secrets["MONICA_CLIENT_ID"],
+            "X-Client-Type": "streamlit",
+            "X-Time-Zone": "UTC;0"
+        }
+    
+    async def send_message(self, messages: List[Dict[str, str]]) -> Dict[str, Any]:
+        payload = {
+            "messages": messages,
+            "model": "claude-3-5-sonnet-20241022",
+            "max_tokens": 8192,
+            "temperature": 0.5,
+            "stream": False
+        }
         
-    def send_message(self, messages):
         try:
-            payload = {
-                "messages": messages,
-                "model": "claude-3-5-sonnet-20241022",
-                "max_tokens": 8192,
-                "temperature": 0.5,
-                "stream": False
-            }
-            
-            response = requests.post(self.api_url, json=payload)
-            response.raise_for_status()
-            return response.json()
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    self.api_url,
+                    json=payload,
+                    headers=self.headers
+                )
+                response.raise_for_status()
+                return response.json()
         except Exception as e:
-            st.error(f"Error communicating with API: {str(e)}")
-            return None
+            st.error(f"Error communicating with Monica API: {str(e)}")
+            return {"error": str(e)}
 
 def initialize_session():
     """Initialize or reset session state"""
@@ -42,7 +53,7 @@ def initialize_session():
         st.session_state.chat_history = {}
 
 def main():
-    st.title("💬 AI Chat Interface")
+    st.title("💬 Monica AI Chat")
     initialize_session()
     
     # Sidebar for conversation management
@@ -70,7 +81,7 @@ def main():
     
     # Main chat interface
     if st.session_state.current_conversation_id:
-        chat_interface = ChatInterface()
+        chat_interface = MonicaChat()
         
         # Display chat history
         for message in st.session_state.conversations[st.session_state.current_conversation_id]:
@@ -88,12 +99,16 @@ def main():
             
             # Get response from API
             with st.spinner("Thinking..."):
-                current_messages = st.session_state.conversations[st.session_state.current_conversation_id]
-                response = chat_interface.send_message(current_messages)
+                response = asyncio.run(chat_interface.send_message(
+                    st.session_state.conversations[st.session_state.current_conversation_id]
+                ))
             
             # Handle API response
-            if response:
-                assistant_message = {"role": "assistant", "content": response.get("content", "Sorry, I couldn't process that.")}
+            if response and "error" not in response:
+                assistant_message = {
+                    "role": "assistant",
+                    "content": response.get("choices", [{}])[0].get("message", {}).get("content", "Sorry, I couldn't process that.")
+                }
                 st.session_state.conversations[st.session_state.current_conversation_id].append(assistant_message)
                 
                 with st.chat_message("assistant"):
