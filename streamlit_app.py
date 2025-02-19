@@ -3,7 +3,6 @@ import httpx
 import asyncio
 import json
 from typing import List, Dict, Any, AsyncGenerator
-import time
 from datetime import datetime
 
 class MonicaChat:
@@ -34,7 +33,7 @@ class MonicaChat:
                 except json.JSONDecodeError:
                     continue
 
-    async def send_message(self, messages: List[Dict[str, str]], placeholder) -> None:
+    async def send_message(self, messages: List[Dict[str, str]], placeholder) -> str:
         formatted_messages = []
         for msg in messages:
             formatted_messages.append({
@@ -68,8 +67,7 @@ class MonicaChat:
                             }
                         }
                     }
-                },
-                # Add other tools as needed
+                }
             ]
         }
 
@@ -85,8 +83,9 @@ class MonicaChat:
                     placeholder.markdown(full_response)
                     
         except Exception as e:
-            placeholder.error(f"Error: {str(e)}")
-            return
+            error_message = f"Error: {str(e)}"
+            placeholder.error(error_message)
+            return error_message
 
         return full_response
 
@@ -117,16 +116,13 @@ def main():
             response_placeholder = st.empty()
             
             # Get assistant response
-            asyncio.run(st.session_state.chat_interface.send_message(
+            response = asyncio.run(st.session_state.chat_interface.send_message(
                 st.session_state.messages,
                 response_placeholder
             ))
             
-            # Get the final response from the placeholder
-            final_response = response_placeholder.markdown()
-            
             # Add assistant response to chat history
-            st.session_state.messages.append({"role": "assistant", "content": final_response})
+            st.session_state.messages.append({"role": "assistant", "content": response})
 
 if __name__ == "__main__":
     main()
