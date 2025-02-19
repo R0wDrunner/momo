@@ -35,7 +35,7 @@ st.markdown("""
     /* Chat messages container */
     .stChatMessageContent {
         background-color: #2d2e33 !important;
-        border-radius: 10px;
+        border-radius: 8px !important;
         padding: 15px;
     }
 
@@ -60,8 +60,20 @@ st.markdown("""
     /* Chat input field */
     .stChatInput {
         background-color: #2d2e33 !important;
-        border-radius: 10px !important;
+        border-radius: 8px !important;
         border: 1px solid #3a3b3f !important;
+    }
+
+    /* Chat input focus state */
+    .stChatInput:focus {
+        border-color: #4a4b50 !important;
+        box-shadow: 0 0 0 1px #4a4b50 !important;
+        border-radius: 8px !important;
+    }
+
+    /* Chat input field wrapper */
+    .stChatInputContainer > div {
+        border-radius: 8px !important;
     }
 
     /* Sidebar styling */
@@ -113,11 +125,18 @@ st.markdown("""
         background: #4a4b50;
     }
 
+    /* Chat message spacing */
+    .stChatMessage {
+        margin-bottom: 1rem !important;
+        border-radius: 8px !important;
+    }
+
     /* Ensure chat container scrolls properly */
     [data-testid="stChatMessageContainer"] {
         overflow-y: auto !important;
         max-height: calc(100vh - 200px) !important;
-        padding-bottom: 100px !important;
+        padding: 2rem !important;
+        padding-bottom: 120px !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -195,7 +214,7 @@ def init_session_state():
     if 'chat_history' not in st.session_state:
         st.session_state.chat_history = []
     if 'current_chat' not in st.session_state:
-        st.session_state.current_chat = 0
+        st.session_state.current_chat = len(st.session_state.chat_history)
 
 def format_chat_title(messages):
     if messages:
@@ -236,6 +255,13 @@ def main():
     if prompt := st.chat_input("What would you like to know?"):
         # Add user message to chat history
         st.session_state.messages.append({"role": "user", "content": prompt})
+
+        # Immediately update chat history for new chats
+        if len(st.session_state.messages) == 1:  # First message in a new chat
+            st.session_state.chat_history.append(st.session_state.messages.copy())
+            st.session_state.current_chat = len(st.session_state.chat_history) - 1
+            st.rerun()
+
         with st.chat_message("user"):
             st.markdown(prompt)
 
