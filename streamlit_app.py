@@ -76,6 +76,15 @@ st.markdown("""
         border-radius: 8px !important;
     }
 
+    .stChatInputContainer > div > div {
+        border-radius: 8px !important;
+    }
+
+    /* This ensures the red border has the same radius */
+    .stChatInput > div {
+        border-radius: 8px !important;
+    }
+
     /* Sidebar styling */
     .css-1d391kg {
         background-color: #2d2e33;
@@ -255,12 +264,6 @@ def main():
     if prompt := st.chat_input("What would you like to know?"):
         # Add user message to chat history
         st.session_state.messages.append({"role": "user", "content": prompt})
-
-        # Immediately update chat history for new chats
-        if len(st.session_state.messages) == 1:  # First message in a new chat
-            st.session_state.chat_history.append(st.session_state.messages.copy())
-            st.session_state.current_chat = len(st.session_state.chat_history) - 1
-            st.rerun()
 
         with st.chat_message("user"):
             st.markdown(prompt)
