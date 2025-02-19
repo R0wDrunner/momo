@@ -5,6 +5,13 @@ import json
 from typing import List, Dict, Any, AsyncGenerator
 from datetime import datetime
 
+# Configure the page layout
+st.set_page_config(
+    page_title="LIMITLESS",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
 class MonicaChat:
     def __init__(self):
         self.api_url = "https://monica.im/api/coder/llm_proxy/chat/completions"
@@ -50,25 +57,6 @@ class MonicaChat:
             "max_tokens": 8192,
             "temperature": 0.5,
             "stream": True,
-            "tools": [
-                {
-                    "type": "function",
-                    "function": {
-                        "name": "builtin_read_file",
-                        "description": "Use this tool whenever you need to view the contents of a file.",
-                        "parameters": {
-                            "type": "object",
-                            "required": ["filepath"],
-                            "properties": {
-                                "filepath": {
-                                    "type": "string",
-                                    "description": "The path of the file to read, relative to the root of the workspace."
-                                }
-                            }
-                        }
-                    }
-                }
-            ]
         }
 
         full_response = ""
@@ -94,35 +82,73 @@ def init_session_state():
         st.session_state.messages = []
     if 'chat_interface' not in st.session_state:
         st.session_state.chat_interface = MonicaChat()
+    if 'chat_history' not in st.session_state:
+        st.session_state.chat_history = []
+    if 'current_chat' not in st.session_state:
+        st.session_state.current_chat = 0
+
+def format_chat_title(messages):
+    if messages:
+        first_msg = messages[0]["content"]
+        return first_msg[:30] + "..." if len(first_msg) > 30 else first_msg
+    return "Empty Chat"
 
 def main():
-    st.title("Monica Chat Interface")
     init_session_state()
 
-    # Display chat messages
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+    # Sidebar for chat history
+    with st.sidebar:
+        st.title("Chat History")
+        
+        # New Chat button at the top
+        if st.button("New Chat", key="new_chat"):
+            st.session_state.messages = []
+            st.session_state.current_chat = len(st.session_state.chat_history)
+            st.experimental_rerun()
 
-    # Chat input
-    if prompt := st.chat_input("What would you like to know?"):
-        # Add user message to chat history
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
-            st.markdown(prompt)
+        # Display chat history
+        for i, chat in enumerate(st.session_state.chat_history):
+            chat_title = format_chat_title(chat)
+            if st.button(f"💬 {chat_title}", key=f"chat_{i}"):
+                st.session_state.messages = chat.copy()
+                st.session_state.current_chat = i
+                st.experimental_rerun()
 
-        # Add assistant message placeholder
-        with st.chat_message("assistant"):
-            response_placeholder = st.empty()
-            
-            # Get assistant response
-            response = asyncio.run(st.session_state.chat_interface.send_message(
-                st.session_state.messages,
-                response_placeholder
-            ))
-            
-            # Add assistant response to chat history
-            st.session_state.messages.append({"role": "assistant", "content": response})
+    # Main chat interface
+    col1, col2 = st.columns([2, 8])
+    with col2:
+        st.title("Monica Chat Interface")
+
+        # Display chat messages
+        for message in st.session_state.messages:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
+
+        # Chat input
+        if prompt := st.chat_input("What would you like to know?"):
+            # Add user message to chat history
+            st.session_state.messages.append({"role": "user", "content": prompt})
+            with st.chat_message("user"):
+                st.markdown(prompt)
+
+            # Add assistant message placeholder
+            with st.chat_message("assistant"):
+                response_placeholder = st.empty()
+                
+                # Get assistant response
+                response = asyncio.run(st.session_state.chat_interface.send_message(
+                    st.session_state.messages,
+                    response_placeholder
+                ))
+                
+                # Add assistant response to chat history
+                st.session_state.messages.append({"role": "assistant", "content": response})
+                
+                # Update chat history
+                if st.session_state.current_chat < len(st.session_state.chat_history):
+                    st.session_state.chat_history[st.session_state.current_chat] = st.session_state.messages.copy()
+                else:
+                    st.session_state.chat_history.append(st.session_state.messages.copy())
 
 if __name__ == "__main__":
     main()
