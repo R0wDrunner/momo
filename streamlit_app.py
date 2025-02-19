@@ -7,7 +7,7 @@ from datetime import datetime
 
 # Configure the page layout
 st.set_page_config(
-    page_title="LIMITLESS",
+    page_title="LIMIT●LESS",
     layout="wide",
     initial_sidebar_state="expanded"
 )
