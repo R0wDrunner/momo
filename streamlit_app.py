@@ -15,53 +15,108 @@ st.set_page_config(
 # Add custom CSS for chat input positioning and styling
 st.markdown("""
     <style>
-    /* Dark theme styles */
+    /* Base theme */
     .stApp {
         background-color: #1a1b1e;
         color: white;
     }
-    
+
+    /* Main container layout */
+    .main-container {
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 80px);
+        margin: -60px -20px;
+        padding: 60px 20px;
+        position: relative;
+    }
+
+    /* Messages container */
+    .messages-container {
+        flex-grow: 1;
+        overflow-y: auto;
+        padding-bottom: 100px;
+    }
+
+    /* Chat input container */
+    .chat-input-container {
+        position: fixed;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 60%;
+        background-color: #2d2e33;
+        padding: 20px;
+        border-radius: 15px 15px 0 0;
+        box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Message styling */
+    .stChatMessage {
+        background-color: #2d2e33 !important;
+        border-radius: 10px;
+        margin: 10px 0;
+        padding: 15px;
+    }
+
+    /* User message */
+    .stChatMessage[data-testid="user-message"] {
+        background-color: #3a3b3f !important;
+    }
+
+    /* Assistant message */
+    .stChatMessage[data-testid="assistant-message"] {
+        background-color: #2d2e33 !important;
+    }
+
     /* Sidebar styling */
     .css-1d391kg {
         background-color: #2d2e33;
+        border-right: 1px solid #3a3b3f;
     }
-    
-    /* Chat input styling */
-    .stChatFloatingInputContainer {
-        position: fixed !important;
-        bottom: 20px !important;
-        width: 60% !important;
-        left: 50% !important;
-        transform: translateX(-50%) !important;
-        z-index: 1000;
-        background-color: #2d2e33 !important;
-        border-radius: 15px !important;
-    }
-    
-    .stChatInputContainer {
-        background-color: #2d2e33 !important;
-        border-radius: 15px !important;
-    }
-    
-    /* Message container styling */
-    .stChatMessage {
-        background-color: #2d2e33 !important;
-    }
-    
-    /* Title styling */
-    .st-emotion-cache-10trblm {
-        color: white !important;
-    }
-    
-    /* Button styling */
+
+    /* Chat history buttons */
     .stButton button {
+        width: 100%;
+        text-align: left;
         background-color: #2d2e33 !important;
         color: white !important;
         border: 1px solid #4a4b50 !important;
+        margin: 5px 0;
+        padding: 10px;
+        transition: all 0.3s ease;
     }
-    
+
     .stButton button:hover {
+        background-color: #3a3b3f !important;
         border-color: #ffffff !important;
+    }
+
+    /* Title styling */
+    .title {
+        font-size: 2.5em;
+        font-weight: bold;
+        text-align: center;
+        margin-bottom: 30px;
+        color: white;
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: #1a1b1e;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: #3a3b3f;
+        border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: #4a4b50;
     }
     </style>
 """, unsafe_allow_html=True)
