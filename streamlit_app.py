@@ -7,9 +7,26 @@ from datetime import datetime
 
 # Configure the page layout
 st.set_page_config(
-    page_title="LIMIT●LESS",
+    page_title="LIMITLESS",
     layout="wide",
     initial_sidebar_state="expanded"
+)
+
+# Add custom CSS for chat input positioning and styling
+st.markdown(
+    """
+    <style>
+    .stChatFloatingInputContainer {
+        position: fixed !important;
+        bottom: 20px !important;
+        width: 60% !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        z-index: 1000;
+    }
+    </style>
+    """, 
+    unsafe_allow_html=True
 )
 
 class MonicaChat:
@@ -117,7 +134,10 @@ def main():
     # Main chat interface
     col1, col2 = st.columns([2, 8])
     with col2:
-        st.title("Monica Chat Interface")
+        st.title("LIMIT●LESS")
+
+        # Add padding at the bottom to prevent messages from being hidden
+        st.markdown("<div style='padding-bottom: 100px;'></div>", unsafe_allow_html=True)
 
         # Display chat messages
         for message in st.session_state.messages:
