@@ -48,9 +48,9 @@ st.markdown("""
     .stChatInputContainer {
         position: fixed !important;
         bottom: 0 !important;
-        left: 50% !important;
+        left: 50%;
         transform: translateX(-50%) !important;
-        width: 40% !important;  /* Changed from 60% to 40% */
+        width: 40%;
         background-color: #1a1b1e !important;
         padding: 20px !important;
         z-index: 1000 !important;
