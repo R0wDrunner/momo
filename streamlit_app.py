@@ -27,7 +27,7 @@ class MonicaChat:
         payload = {
             "messages": messages,
             "model": "claude-3-sonnet-20240229",  # Updated model name
-            "max_tokens": 8192,
+            "max_tokens": 4096,
             "temperature": 0.7,
             "stream": False
         }
