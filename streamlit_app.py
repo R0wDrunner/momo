@@ -13,9 +13,20 @@ st.set_page_config(
 )
 
 # Add custom CSS for chat input positioning and styling
-st.markdown(
-    """
+st.markdown("""
     <style>
+    /* Dark theme styles */
+    .stApp {
+        background-color: #1a1b1e;
+        color: white;
+    }
+    
+    /* Sidebar styling */
+    .css-1d391kg {
+        background-color: #2d2e33;
+    }
+    
+    /* Chat input styling */
     .stChatFloatingInputContainer {
         position: fixed !important;
         bottom: 20px !important;
@@ -23,11 +34,37 @@ st.markdown(
         left: 50% !important;
         transform: translateX(-50%) !important;
         z-index: 1000;
+        background-color: #2d2e33 !important;
+        border-radius: 15px !important;
+    }
+    
+    .stChatInputContainer {
+        background-color: #2d2e33 !important;
+        border-radius: 15px !important;
+    }
+    
+    /* Message container styling */
+    .stChatMessage {
+        background-color: #2d2e33 !important;
+    }
+    
+    /* Title styling */
+    .st-emotion-cache-10trblm {
+        color: white !important;
+    }
+    
+    /* Button styling */
+    .stButton button {
+        background-color: #2d2e33 !important;
+        color: white !important;
+        border: 1px solid #4a4b50 !important;
+    }
+    
+    .stButton button:hover {
+        border-color: #ffffff !important;
     }
     </style>
-    """, 
-    unsafe_allow_html=True
-)
+""", unsafe_allow_html=True)
 
 class MonicaChat:
     def __init__(self):
