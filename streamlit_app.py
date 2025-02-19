@@ -21,58 +21,52 @@ st.markdown("""
         color: white;
     }
 
-    /* Main container layout */
-    .main-container {
-        display: flex;
-        flex-direction: column;
-        height: calc(100vh - 80px);
-        margin: -60px -20px;
-        padding: 60px 20px;
-        position: relative;
-    }
+    /* Hide Streamlit branding */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
 
-    /* Messages container */
-    .messages-container {
-        flex-grow: 1;
-        overflow-y: auto;
+    /* Main container */
+    .main .block-container {
         padding-bottom: 100px;
+        max-width: 1000px;
     }
 
-    /* Chat input container */
-    .chat-input-container {
-        position: fixed;
-        bottom: 0;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 60%;
-        background-color: #2d2e33;
-        padding: 20px;
-        border-radius: 15px 15px 0 0;
-        box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
-    }
-
-    /* Message styling */
-    .stChatMessage {
+    /* Chat messages container */
+    .stChatMessageContent {
         background-color: #2d2e33 !important;
         border-radius: 10px;
-        margin: 10px 0;
         padding: 15px;
     }
 
     /* User message */
-    .stChatMessage[data-testid="user-message"] {
+    [data-testid="stChatMessageContent"][class*="user"] {
         background-color: #3a3b3f !important;
     }
 
-    /* Assistant message */
-    .stChatMessage[data-testid="assistant-message"] {
+    /* Chat input container */
+    .stChatInputContainer {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        width: 60% !important;
+        background-color: #1a1b1e !important;
+        padding: 20px !important;
+        z-index: 1000 !important;
+        border-top: 1px solid #3a3b3f !important;
+    }
+
+    /* Chat input field */
+    .stChatInput {
         background-color: #2d2e33 !important;
+        border-radius: 10px !important;
+        border: 1px solid #3a3b3f !important;
     }
 
     /* Sidebar styling */
     .css-1d391kg {
         background-color: #2d2e33;
-        border-right: 1px solid #3a3b3f;
     }
 
     /* Chat history buttons */
@@ -118,6 +112,13 @@ st.markdown("""
     ::-webkit-scrollbar-thumb:hover {
         background: #4a4b50;
     }
+
+    /* Ensure chat container scrolls properly */
+    [data-testid="stChatMessageContainer"] {
+        overflow-y: auto !important;
+        max-height: calc(100vh - 200px) !important;
+        padding-bottom: 100px !important;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -159,7 +160,7 @@ class MonicaChat:
                     "text": msg["content"]
                 }]
             })
-        
+
         payload = {
             "messages": formatted_messages,
             "model": "claude-3-5-sonnet-20241022",
@@ -175,10 +176,10 @@ class MonicaChat:
                     async for chunk in self._process_stream(response):
                         full_response += chunk
                         placeholder.markdown(full_response + "▌")
-                    
+
                     # Final update without the cursor
                     placeholder.markdown(full_response)
-                    
+
         except Exception as e:
             error_message = f"Error: {str(e)}"
             placeholder.error(error_message)
@@ -208,7 +209,7 @@ def main():
     # Sidebar for chat history
     with st.sidebar:
         st.title("Chat History")
-        
+
         # New Chat button at the top
         if st.button("New Chat", key="new_chat"):
             st.session_state.messages = []
@@ -224,43 +225,38 @@ def main():
                 st.experimental_rerun()
 
     # Main chat interface
-    col1, col2 = st.columns([2, 8])
-    with col2:
-        st.title("LIMIT●LESS")
+    st.title("LIMIT●LESS")
 
-        # Add padding at the bottom to prevent messages from being hidden
-        st.markdown("<div style='padding-bottom: 100px;'></div>", unsafe_allow_html=True)
+    # Display chat messages
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
 
-        # Display chat messages
-        for message in st.session_state.messages:
-            with st.chat_message(message["role"]):
-                st.markdown(message["content"])
+    # Chat input
+    if prompt := st.chat_input("What would you like to know?"):
+        # Add user message to chat history
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
 
-        # Chat input
-        if prompt := st.chat_input("What would you like to know?"):
-            # Add user message to chat history
-            st.session_state.messages.append({"role": "user", "content": prompt})
-            with st.chat_message("user"):
-                st.markdown(prompt)
+        # Add assistant message placeholder
+        with st.chat_message("assistant"):
+            response_placeholder = st.empty()
 
-            # Add assistant message placeholder
-            with st.chat_message("assistant"):
-                response_placeholder = st.empty()
-                
-                # Get assistant response
-                response = asyncio.run(st.session_state.chat_interface.send_message(
-                    st.session_state.messages,
-                    response_placeholder
-                ))
-                
-                # Add assistant response to chat history
-                st.session_state.messages.append({"role": "assistant", "content": response})
-                
-                # Update chat history
-                if st.session_state.current_chat < len(st.session_state.chat_history):
-                    st.session_state.chat_history[st.session_state.current_chat] = st.session_state.messages.copy()
-                else:
-                    st.session_state.chat_history.append(st.session_state.messages.copy())
+            # Get assistant response
+            response = asyncio.run(st.session_state.chat_interface.send_message(
+                st.session_state.messages,
+                response_placeholder
+            ))
+
+            # Add assistant response to chat history
+            st.session_state.messages.append({"role": "assistant", "content": response})
+
+            # Update chat history
+            if st.session_state.current_chat < len(st.session_state.chat_history):
+                st.session_state.chat_history[st.session_state.current_chat] = st.session_state.messages.copy()
+            else:
+                st.session_state.chat_history.append(st.session_state.messages.copy())
 
 if __name__ == "__main__":
     main()
