@@ -50,7 +50,7 @@ st.markdown("""
         bottom: 0 !important;
         left: 50% !important;
         transform: translateX(-50%) !important;
-        width: 60% !important;
+        width: 40% !important;  /* Changed from 60% to 40% */
         background-color: #1a1b1e !important;
         padding: 20px !important;
         z-index: 1000 !important;
@@ -62,6 +62,7 @@ st.markdown("""
         background-color: #2d2e33 !important;
         border-radius: 8px !important;
         border: 1px solid #3a3b3f !important;
+        max-width: 100% !important;
     }
 
     /* Chat input focus state */
@@ -218,6 +219,21 @@ class MonicaChat:
             return error_message
 
         return full_response
+
+    async def get_chat_title(self, message: str) -> str:
+        """Get a summarized title for the chat"""
+        messages = [{
+            "role": "system",
+            "content": "Please provide a brief 3-5 word summary of the following message that can be used as a title:"
+        }, {
+            "role": "user",
+            "content": message
+        }]
+
+        placeholder = st.empty()  # Create an empty placeholder that won't be displayed
+        response = await self.send_message(messages, placeholder)
+        placeholder.empty()  # Remove the placeholder
+        return response.strip()
 
 def init_session_state():
     if 'messages' not in st.session_state:
