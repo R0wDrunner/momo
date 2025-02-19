@@ -88,6 +88,17 @@ CUSTOM_CSS = """
         box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
 
+    /* Target the actual input element */
+    .stChatInput textarea {
+        background-color: #1a1f2c !important;
+        color: #e0e0e0 !important;
+    }
+
+    /* Placeholder color */
+    .stChatInput textarea::placeholder {
+        color: #6b7280 !important;
+    }
+
     /* Chat input hover state */
     .stChatInput:hover {
         border-color: #3a4556 !important;
@@ -353,26 +364,6 @@ class MonicaChat:
             raise ChatError(error_message)
 
         return full_response
-
-    async def get_chat_title(self, message: str) -> str:
-        """Generate a chat title from the first message"""
-        messages = [
-            {
-                "role": "system",
-                "content": "Please provide a brief 3-5 word summary of the following message that can be used as a title:"
-            },
-            {
-                "role": "user",
-                "content": message
-            }
-        ]
-
-        placeholder = st.empty()
-        try:
-            response = await self.send_message(messages, placeholder)
-            return response.strip()
-        finally:
-            placeholder.empty()
 
 class SessionState:
     """Manage Streamlit session state"""
