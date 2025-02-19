@@ -26,23 +26,40 @@ class MonicaChat:
     async def send_message(self, messages: List[Dict[str, str]]) -> Dict[str, Any]:
         payload = {
             "messages": messages,
-            "model": "claude-3-5-sonnet-20241022",
+            "model": "claude-3-sonnet-20240229",  # Updated model name
             "max_tokens": 8192,
-            "temperature": 0.5,
+            "temperature": 0.7,
             "stream": False
         }
         
         try:
-            async with httpx.AsyncClient() as client:
+            async with httpx.AsyncClient(timeout=30.0) as client:  # Added timeout
+                # Debug prints
+                st.write("Sending request with payload:", payload)
+                st.write("Headers:", {k: v for k, v in self.headers.items() if k != 'X-Api-Key'})
+                
                 response = await client.post(
                     self.api_url,
                     json=payload,
                     headers=self.headers
                 )
-                response.raise_for_status()
-                return response.json()
+                
+                # Debug response
+                st.write("Response status:", response.status_code)
+                
+                try:
+                    response_data = response.json()
+                    st.write("Response data:", response_data)
+                    return response_data
+                except json.JSONDecodeError:
+                    st.error(f"Invalid JSON response. Raw response: {response.text}")
+                    return {"error": "Invalid JSON response from API"}
+                
+        except httpx.TimeoutException:
+            st.error("Request timed out")
+            return {"error": "Request timed out"}
         except Exception as e:
-            st.error(f"Error communicating with Monica API: {str(e)}")
+            st.error(f"Error: {str(e)}")
             return {"error": str(e)}
 
 def initialize_session():
