@@ -70,13 +70,18 @@ CUSTOM_CSS = """
         bottom: 0 !important;
         left: 50%;
         transform: translateX(-50%) !important;
-        width: 60%;
+        width: min(30%, 400px) !important; /* Added max-width limit */
         background-color: rgba(14, 17, 23, 0.95) !important;
         padding: 20px !important;
         z-index: 1000 !important;
         border-top: 1px solid #2d3544 !important;
         backdrop-filter: blur(10px);
         box-shadow: 0 -4px 12px rgba(0,0,0,0.1);
+    }
+
+    /* Adjust width when sidebar is collapsed */
+    [data-testid="stSidebar"][aria-expanded="false"] ~ .main .stChatInputContainer {
+        width: min(80%, 1000px) !important;
     }
 
     /* Chat input field */
