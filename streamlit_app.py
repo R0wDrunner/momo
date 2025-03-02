@@ -12,7 +12,7 @@ from ratelimit import limits, sleep_and_retry
 API_TIMEOUT = 30.0
 MAX_TOKENS = 8192
 TEMPERATURE = 0.5
-MODEL_NAME = "openai-o1"
+MODEL_NAME = "qwen2.5-coder-7b-awq"
 CHAT_TITLE_MAX_LENGTH = 30
 RATE_LIMIT_CALLS = 60
 RATE_LIMIT_PERIOD = 60
@@ -284,7 +284,7 @@ class ChatError(Exception):
 class MonicaChat:
     def __init__(self):
         """Initialize the MonicaChat client with API configuration"""
-        self.api_url = "https://monica.im/api/coder/llm_proxy/chat/completions"
+        self.api_url = "https://completion.code.monica.cool/v1/completions"
         self.headers = {
             "Content-Type": "application/json",
             "X-Api-Key": st.secrets["MONICA_API_KEY"],
