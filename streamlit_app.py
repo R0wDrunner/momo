@@ -284,7 +284,7 @@ class ChatError(Exception):
 class MonicaChat:
     def __init__(self):
         """Initialize the MonicaChat client with API configuration"""
-        self.api_url = "https://monica.im/api/coder/llm_proxy/chat/completions"
+        self.api_url = "https://monica.im/api/coder/llm_proxy/chat/"
         self.headers = {
             "Content-Type": "application/json",
             "X-Api-Key": st.secrets["MONICA_API_KEY"],
