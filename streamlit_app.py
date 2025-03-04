@@ -361,16 +361,25 @@ class MonicaChat:
     @limits(calls=RATE_LIMIT_CALLS, period=RATE_LIMIT_PERIOD)
     async def send_message(self, messages: List[Dict[str, str]], placeholder) -> Dict[str, str]:
         """Send a message to the chat API with rate limiting"""
-        formatted_messages = [
-            {
+        # Fix the message formatting for API request
+        formatted_messages = []
+        for msg in messages:
+            # Extract the content properly based on message structure
+            content_text = ""
+            if msg["role"] == "assistant" and isinstance(msg["content"], dict):
+                # If it's an assistant message with a dict content
+                content_text = msg["content"].get("content", "")
+            else:
+                # For user messages or simple string content
+                content_text = msg["content"]
+                
+            formatted_messages.append({
                 "role": msg["role"],
                 "content": [{
                     "type": "text",
-                    "text": msg["content"]
+                    "text": content_text
                 }]
-            }
-            for msg in messages
-        ]
+            })
 
         # Set temperature based on model
         temperature = 1.0 if MODEL_NAME == "claude-3-7-sonnet-latest-thinking" else 0.5
@@ -439,6 +448,8 @@ def format_chat_title(messages: List[Dict[str, str]]) -> str:
     if not messages:
         return "Empty Chat"
     first_msg = messages[0]["content"]
+    if isinstance(first_msg, dict):
+        first_msg = first_msg.get("content", "")
     return f"{first_msg[:CHAT_TITLE_MAX_LENGTH]}..." if len(first_msg) > CHAT_TITLE_MAX_LENGTH else first_msg
 
 def render_sidebar():
