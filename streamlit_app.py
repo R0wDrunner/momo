@@ -11,7 +11,6 @@ from ratelimit import limits, sleep_and_retry
 # Constants
 API_TIMEOUT = 30.0
 MAX_TOKENS = 8192
-TEMPERATURE = 1
 MODEL_NAME = "claude-3-7-sonnet-latest-thinking"
 CHAT_TITLE_MAX_LENGTH = 30
 RATE_LIMIT_CALLS = 60
@@ -274,6 +273,27 @@ CUSTOM_CSS = """
         color: #93c5fd !important;
         text-decoration: underline !important;
     }
+
+    /* Reasoning content styling */
+    .reasoning-content {
+        background-color: #1c2334;
+        border-left: 3px solid #60a5fa;
+        padding: 10px 15px;
+        margin-top: 15px;
+        border-radius: 6px;
+        font-style: italic;
+        color: #a9b2c3;
+        font-size: 0.95em;
+    }
+
+    .reasoning-heading {
+        font-weight: 600;
+        color: #60a5fa;
+        margin-bottom: 5px;
+        font-size: 0.9em;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
     </style>
 """
 
@@ -308,7 +328,7 @@ class MonicaChat:
                 await self._client.aclose()
                 self._client = None
 
-    async def _process_stream(self, response: httpx.Response) -> AsyncGenerator[str, None]:
+    async def _process_stream(self, response: httpx.Response) -> AsyncGenerator[Dict[str, str], None]:
         """Process streaming response from the API"""
         try:
             async for line in response.aiter_lines():
@@ -320,8 +340,16 @@ class MonicaChat:
                         json_data = json.loads(data)
                         if 'choices' in json_data and json_data['choices']:
                             delta = json_data['choices'][0].get('delta', {})
+                            result = {}
+                            
                             if 'content' in delta:
-                                yield delta['content']
+                                result['content'] = delta['content']
+                            
+                            if 'reasoning_content' in delta:
+                                result['reasoning_content'] = delta['reasoning_content']
+                            
+                            if result:  # Only yield if we have content
+                                yield result
                     except json.JSONDecodeError as e:
                         logger.error(f"JSON decode error: {e}")
                         continue
@@ -331,7 +359,7 @@ class MonicaChat:
 
     @sleep_and_retry
     @limits(calls=RATE_LIMIT_CALLS, period=RATE_LIMIT_PERIOD)
-    async def send_message(self, messages: List[Dict[str, str]], placeholder) -> str:
+    async def send_message(self, messages: List[Dict[str, str]], placeholder) -> Dict[str, str]:
         """Send a message to the chat API with rate limiting"""
         formatted_messages = [
             {
@@ -344,24 +372,40 @@ class MonicaChat:
             for msg in messages
         ]
 
+        # Set temperature based on model
+        temperature = 1.0 if MODEL_NAME == "claude-3-7-sonnet-latest-thinking" else 0.5
+
         payload = {
             "messages": formatted_messages,
             "model": MODEL_NAME,
             "max_tokens": MAX_TOKENS,
-            "temperature": TEMPERATURE,
+            "temperature": temperature,
             "stream": True,
         }
 
-        full_response = ""
+        full_response = {"content": "", "reasoning_content": ""}
         try:
             async with self.get_client() as client:
                 async with client.stream('POST', self.api_url, json=payload, headers=self.headers) as response:
                     response.raise_for_status()
                     async for chunk in self._process_stream(response):
-                        full_response += chunk
-                        # Add typing indicator animation
-                        placeholder.markdown(full_response + "▋", unsafe_allow_html=True)
-                    placeholder.markdown(full_response, unsafe_allow_html=True)
+                        if 'content' in chunk:
+                            full_response['content'] += chunk['content']
+                        if 'reasoning_content' in chunk:
+                            full_response['reasoning_content'] += chunk['reasoning_content']
+                        
+                        # Update placeholder with content and reasoning_content
+                        display_text = full_response['content']
+                        if full_response['reasoning_content']:
+                            display_text += f"\n\n<div class='reasoning-content'><div class='reasoning-heading'>Reasoning:</div>{full_response['reasoning_content']}</div>"
+                        
+                        placeholder.markdown(display_text + "▋", unsafe_allow_html=True)
+                    
+                    # Final display without cursor
+                    display_text = full_response['content']
+                    if full_response['reasoning_content']:
+                        display_text += f"\n\n<div class='reasoning-content'><div class='reasoning-heading'>Reasoning:</div>{full_response['reasoning_content']}</div>"
+                    placeholder.markdown(display_text, unsafe_allow_html=True)
         except Exception as e:
             logger.error(f"API request failed: {e}")
             error_message = f"Error: {str(e)}"
@@ -422,7 +466,17 @@ def render_chat():
     # Display chat messages with timestamps
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+            if isinstance(message["content"], dict) and "content" in message["content"] and "reasoning_content" in message["content"]:
+                content = message["content"]["content"]
+                reasoning = message["content"]["reasoning_content"]
+                
+                display_text = content
+                if reasoning:
+                    display_text += f"\n\n<div class='reasoning-content'><div class='reasoning-heading'>Reasoning:</div>{reasoning}</div>"
+                st.markdown(display_text, unsafe_allow_html=True)
+            else:
+                st.markdown(message["content"])
+            
             st.markdown(f"<div class='message-timestamp'>{datetime.now().strftime('%H:%M')}</div>", unsafe_allow_html=True)
 
 def handle_user_input():
