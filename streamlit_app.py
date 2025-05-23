@@ -384,7 +384,7 @@ class MonicaChat:
             })
 
         # Set temperature based on model
-        temperature = 1.0 if MODEL_NAME == "claude-3-7-sonnet-latest-thinking" else 0.5
+        temperature = 1.0 #if MODEL_NAME == "claude-3-7-sonnet-latest-thinking" else 0.5
 
         payload = {
             "messages": formatted_messages,
@@ -392,6 +392,10 @@ class MonicaChat:
             "max_tokens": MAX_TOKENS,
             "temperature": temperature,
             "stream": True,
+            "thinking": {
+                "type": "enabled",
+                "budget_tokens": 10000
+            },
         }
 
         full_response = {"content": "", "reasoning_content": ""}
