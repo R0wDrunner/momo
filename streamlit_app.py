@@ -11,7 +11,8 @@ from ratelimit import limits, sleep_and_retry
 # Constants
 API_TIMEOUT = 30.0
 MAX_TOKENS = 8192
-MODEL_NAME = "claude-3-7-sonnet-latest-thinking"
+# MODEL_NAME = "claude-3-7-sonnet-latest-thinking"
+MODEL_NAME = "claude_4_sonnet"
 CHAT_TITLE_MAX_LENGTH = 30
 RATE_LIMIT_CALLS = 60
 RATE_LIMIT_PERIOD = 60
