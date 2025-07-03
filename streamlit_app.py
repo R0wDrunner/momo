@@ -28,8 +28,274 @@ PAGE_CONFIG = {
     "initial_sidebar_state": "expanded"
 }
 
-# Keep your existing CUSTOM_CSS here...
-# [Your existing CSS code remains unchanged]
+CUSTOM_CSS = """
+    <style>
+    /* Base theme */
+    .stApp {
+        background-color: #0e1117;
+        color: #e0e0e0;
+    }
+
+    /* Hide Streamlit branding */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+
+    /* Main container */
+    .main .block-container {
+        padding-bottom: 100px;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    /* Chat messages container */
+    .stChatMessageContent {
+        background-color: #1a1f2c !important;
+        border-radius: 12px !important;
+        padding: 15px;
+        border: 1px solid #2d3544;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+
+    /* User message */
+    [data-testid="stChatMessageContent"][class*="user"] {
+        background-color: #2d3544 !important;
+        border: 1px solid #3a4556;
+    }
+
+    /* Chat input container */
+    .stChatInputContainer {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 50%;
+        transform: translateX(-50%) !important;
+        width: min(30%, 400px) !important; /* Added max-width limit */
+        background-color: rgba(14, 17, 23, 0.95) !important;
+        padding: 20px !important;
+        z-index: 1000 !important;
+        border-top: 1px solid #2d3544 !important;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 -4px 12px rgba(0,0,0,0.1);
+    }
+
+    /* Adjust width when sidebar is collapsed */
+    [data-testid="stSidebar"][aria-expanded="false"] ~ .main .stChatInputContainer {
+        width: min(80%, 1000px) !important;
+    }
+
+    /* Chat input field */
+    .stChatInput {
+        background-color: #1a1f2c !important;
+        border-radius: 12px !important;
+        border: 2px solid #2d3544 !important;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    /* Target the actual input element */
+    .stChatInput textarea {
+        background-color: #1a1f2c !important;
+        color: #e0e0e0 !important;
+    }
+
+    /* Placeholder color */
+    .stChatInput textarea::placeholder {
+        color: #6b7280 !important;
+    }
+
+    /* Chat input hover state */
+    .stChatInput:hover {
+        border-color: #3a4556 !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    /* Chat input focus state */
+    .stChatInput:focus {
+        border-color: #4a5567 !important;
+        box-shadow: 0 0 0 2px rgba(74, 85, 103, 0.2) !important;
+    }
+
+    /* Chat input field wrapper */
+    .stChatInputContainer > div {
+        border-radius: 12px !important;
+    }
+
+    /* Fix for red border radius */
+    .stChatInput > div > div {
+        border-radius: 12px !important;
+    }
+
+    .stChatInput > div {
+        border-radius: 12px !important;
+    }
+
+    /* Additional fix for red border */
+    .stChatInput div[data-baseweb="input"] {
+        border-radius: 12px !important;
+    }
+
+    /* Sidebar styling */
+    .css-1d391kg {
+        background-color: #1a1f2c;
+    }
+
+    /* Chat history buttons */
+    .stButton button {
+        width: 100%;
+        text-align: left;
+        background-color: #1a1f2c !important;
+        color: #e0e0e0 !important;
+        border: 1px solid #2d3544 !important;
+        margin: 5px 0;
+        padding: 12px;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        font-size: 0.95em;
+    }
+
+    .stButton button:hover {
+        background-color: #2d3544 !important;
+        border-color: #3a4556 !important;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    /* Title styling */
+    .title {
+        font-size: 2.8em;
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 40px;
+        color: #e0e0e0;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        letter-spacing: 1px;
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: #0e1117;
+        border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: #2d3544;
+        border-radius: 4px;
+        transition: all 0.3s ease;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: #3a4556;
+    }
+
+    /* Chat message spacing */
+    .stChatMessage {
+        margin-bottom: 1.5rem !important;
+        border-radius: 12px !important;
+        animation: fadeIn 0.3s ease;
+    }
+
+    /* Chat container scroll area */
+    [data-testid="stChatMessageContainer"] {
+        overflow-y: auto !important;
+        max-height: calc(100vh - 200px) !important;
+        padding: 2rem !important;
+        padding-bottom: 120px !important;
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* New Chat button styling */
+    button[key="new_chat"] {
+        background-color: #2d3544 !important;
+        color: #e0e0e0 !important;
+        border: none !important;
+        padding: 12px 20px !important;
+        border-radius: 8px !important;
+        font-weight: 600 !important;
+        letter-spacing: 0.5px !important;
+        margin-bottom: 20px !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1) !important;
+    }
+
+    button[key="new_chat"]:hover {
+        background-color: #3a4556 !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
+    }
+
+    /* Sidebar title styling */
+    .sidebar .element-container:first-child {
+        background-color: #1a1f2c;
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    /* Message timestamp styling */
+    .message-timestamp {
+        font-size: 0.8em;
+        color: #6b7280;
+        margin-top: 5px;
+    }
+
+    /* Code block styling */
+    pre {
+        background-color: #1a1f2c !important;
+        padding: 15px !important;
+        border-radius: 8px !important;
+        border: 1px solid #2d3544 !important;
+        overflow-x: auto !important;
+    }
+
+    code {
+        color: #e0e0e0 !important;
+        font-family: 'Fira Code', monospace !important;
+    }
+
+    /* Link styling */
+    a {
+        color: #60a5fa !important;
+        text-decoration: none !important;
+        transition: all 0.3s ease !important;
+    }
+
+    a:hover {
+        color: #93c5fd !important;
+        text-decoration: underline !important;
+    }
+
+    /* Reasoning content styling */
+    .reasoning-content {
+        background-color: #1c2334;
+        border-left: 3px solid #60a5fa;
+        padding: 10px 15px;
+        margin-top: 15px;
+        border-radius: 6px;
+        font-style: italic;
+        color: #a9b2c3;
+        font-size: 0.95em;
+    }
+
+    .reasoning-heading {
+        font-weight: 600;
+        color: #60a5fa;
+        margin-bottom: 5px;
+        font-size: 0.9em;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    </style>
+"""
 
 class ChatError(Exception):
     """Custom exception for chat-related errors"""
