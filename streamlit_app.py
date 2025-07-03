@@ -11,9 +11,9 @@ from ratelimit import limits, sleep_and_retry
 # Constants
 API_TIMEOUT = 30.0
 MAX_TOKENS = 150000
-MODEL_NAME = "claude-3-7-sonnet-latest-thinking"
+# MODEL_NAME = "claude-3-7-sonnet-latest-thinking"
 # MODEL_NAME = "claude-4-sonnet"
-# MODEL_NAME = "claude-sonnet-4-20250514-thinking"
+MODEL_NAME = "claude-3-7-sonnet-latest"
 CHAT_TITLE_MAX_LENGTH = 30
 RATE_LIMIT_CALLS = 60
 RATE_LIMIT_PERIOD = 60
@@ -384,7 +384,7 @@ class MonicaChat:
             })
 
         # Set temperature based on model
-        temperature = 1.0 #if MODEL_NAME == "claude-3-7-sonnet-latest-thinking" else 0.5
+        temperature = 1.0 if MODEL_NAME == "claude-3-7-sonnet-latest-thinking" else 0.5
 
         payload = {
             "messages": formatted_messages,
@@ -392,10 +392,6 @@ class MonicaChat:
             "max_tokens": MAX_TOKENS,
             "temperature": temperature,
             "stream": True,
-            "thinking": {
-                "type": "enabled",
-                "budget_tokens": 10000
-            },
         }
 
         full_response = {"content": "", "reasoning_content": ""}
@@ -545,3 +541,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
