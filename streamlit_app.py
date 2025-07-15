@@ -10,10 +10,10 @@ from ratelimit import limits, sleep_and_retry
 
 # Constants
 API_TIMEOUT = 30.0
-MAX_TOKENS = 150000
-MODEL_NAME = "claude-3-7-sonnet-latest-thinking"
+MAX_TOKENS = 32000
+# MODEL_NAME = "claude-3-7-sonnet-latest-thinking"
 # MODEL_NAME = "claude-4-sonnet"
-#cMODEL_NAME = "claude-sonnet-4-20250514-thinking"
+MODEL_NAME = "claude-sonnet-4-20250514-thinking"
 CHAT_TITLE_MAX_LENGTH = 30
 RATE_LIMIT_CALLS = 60
 RATE_LIMIT_PERIOD = 60
@@ -307,12 +307,13 @@ class MonicaChat:
     def __init__(self):
         """Initialize the MonicaChat client with API configuration"""
         self.api_url = "https://monica.im/api/coder/llm_proxy/chat/completions"
+
         self.headers = {
             "Content-Type": "application/json",
             "X-Api-Key": st.secrets["MONICA_API_KEY"],
             "X-Client-Id": st.secrets["MONICA_CLIENT_ID"],
             "X-Client-Type": "vscodeVisual Studio Code",
-            "X-Client-Version": "1.3.14",
+            "X-Client-Version": "1.3.156",
             "X-Product-Name": "monica-code",
             "X-Time-Zone": "UTC;0"
         }
@@ -391,11 +392,7 @@ class MonicaChat:
             "model": MODEL_NAME,
             "max_tokens": MAX_TOKENS,
             "temperature": temperature,
-            "stream": True,
-            "thinking": {
-                "type": "enabled",
-                "budget_tokens": 10000
-            },
+            "stream": True
         }
 
         full_response = {"content": "", "reasoning_content": ""}
